@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Recognition</title>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-image: url('{{ url_for('static', filename='background.webp') }}');
+            background-size: 200%;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .container {
+            padding: 20px;
+            text-align: center;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 15px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.25);
+            width: 100%;
+            max-width: 800px;
+        }
+
+        .message {
+            background-color: orange;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            font-size: 2em;
+            font-weight: bold;
+            text-align: center;
+            max-width: 100%;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+            margin-bottom: 20px;
+        }
+
+        #status {
+            font-size: 20px;
+            color: green;
+            margin-top: 10px;
+        }
+
+        #progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: lightblue;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        #progress-bar div {
+            height: 100%;
+            width: 0%;
+            background-color: green;
+            transition: width 0.5s ease;
+        }
+
+        #start-button {
+            font-size: 18px;
+            padding: 10px 20px;
+        }
+
+         #retake-button {
+            font-size: 18px;
+            padding: 10px 20px;
+            display: none; /* Initially hidden */
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="message">Face Capturing System</h1>
+        <div class="video-container">
+            <h2>Face Registration</h2>
+            <img id="video-feed" src="{{ url_for('video_feed') }}" alt="Video feed">
+        </div>
+        <div id="progress-bar">
+            <div></div>
+        </div>
+        <form id="start-form">
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" required>
+            <button type="submit">Start Capture</button>
+        </form>
+        <p id="status"></p>
+    </div>
+
+    <script>
+        document.getElementById("start-form").onsubmit = function(event) {
+            event.preventDefault();
+            const username = document.getElementById("username").value;
+
+            fetch('/start_capture', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username })
+            }).then(res => res.json())
+              .then(data => {
+                  document.getElementById("status").innerText = data.message;
+
+                  if (data.message.includes("successfully")) {
+                      const progressBar = document.getElementById("progress-bar").firstElementChild;
+                      const interval = setInterval(() => {
+                          fetch('/status')
+                              .then(res => res.json())
+                              .then(data => {
+                                  progressBar.style.width = data.progress + "%";
+                                  document.getElementById("status").innerText = data.message;
+                                  if (data.progress === 100) clearInterval(interval);
+                              });
+                      }, 1000);
+                  }
+              });
+        };
+    </script>
+</body>
+</html>
